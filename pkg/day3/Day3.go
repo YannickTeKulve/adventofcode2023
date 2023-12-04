@@ -13,6 +13,85 @@ type searchRange struct {
 	Number        string
 }
 
+type validgear struct {
+	linenr int
+	index  []int
+}
+
+func Day31task2(filepath string) (int, error) {
+	numberRegex := regexp.MustCompile("[0-9]+")
+	var lines []string
+	var gearLines = map[int][][]int{}
+	validGears := []validgear{}
+	linenumber := 0
+	result := 0
+	utils.ReadFile(filepath, func(line string) {
+		numberRegex := regexp.MustCompile("[\\*]+")
+		gears := numberRegex.FindAllStringIndex(line, -1)
+		if len(gears) > 0 {
+			gearLines[linenumber] = gears
+		}
+		lines = append(lines, line)
+		linenumber++
+	})
+
+	for i, gears := range gearLines {
+		for _, gear := range gears {
+			onLineAbove := 0
+			onLineUnder := 0
+			if (i - 1) >= 0 {
+				onLineAbove = len(numberRegex.FindAllString(lines[i-1][gear[0]-1:gear[1]+1], -1))
+			}
+			onLineItself := len(numberRegex.FindAllString(lines[i][gear[0]-1:gear[1]+1], -1))
+			if (i + 1) < len(lines) {
+				onLineUnder = len(numberRegex.FindAllString(lines[i+1][gear[0]-1:gear[1]+1], -1))
+			}
+			found := onLineAbove + onLineUnder + onLineItself
+			if found == 2 {
+				validGears = append(validGears, validgear{i, gear})
+
+			}
+			println(found)
+		}
+	}
+
+	for _, valid := range validGears {
+		grid := map[int][][]int{}
+
+		if (valid.linenr - 1) >= 0 {
+			grid[valid.linenr-1] = numberRegex.FindAllStringIndex(lines[valid.linenr-1], -1)
+		}
+		grid[valid.linenr] = numberRegex.FindAllStringIndex(lines[valid.linenr], -1)
+		if (valid.linenr + 1) < len(lines) {
+			grid[valid.linenr+1] = numberRegex.FindAllStringIndex(lines[valid.linenr+1], -1)
+		}
+
+		gearResult := 0
+		for linenr, line := range grid {
+			for _, numberIndex := range line {
+				println(fmt.Sprintf("checking: %s", lines[linenr][numberIndex[0]:numberIndex[1]]))
+				if (numberIndex[0] <= valid.index[0] && numberIndex[1] >= valid.index[0]) ||
+					(numberIndex[0] <= (valid.index[0]-1) && numberIndex[1] > (valid.index[0]-1)) ||
+					(numberIndex[0] <= (valid.index[0]+1) && numberIndex[1] > (valid.index[0]+1)) {
+					println(fmt.Sprintf("%d - %d", linenr, valid.index[0]))
+					println(lines[linenr][numberIndex[0]:numberIndex[1]])
+					value, _ := strconv.Atoi(lines[linenr][numberIndex[0]:numberIndex[1]])
+					if gearResult == 0 {
+						gearResult = value
+					} else {
+						gearResult = gearResult * value
+					}
+				}
+			}
+		}
+		println(fmt.Sprintf("gearresult: %d", gearResult))
+		result = gearResult + result
+
+	}
+
+	return result, nil
+}
+
 func Day31(filepath string) (int, error) {
 	srFormerLine := []searchRange{}
 
